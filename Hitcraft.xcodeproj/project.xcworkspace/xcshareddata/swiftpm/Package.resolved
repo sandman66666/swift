@@ -1,0 +1,42 @@
+{
+  "originHash" : "f9d984e5468bc265a4897f00ed14705cd492d88d05ee8375219ac368431b8d12",
+  "pins" : [
+    {
+      "identity" : "alamofire",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Alamofire/Alamofire.git",
+      "state" : {
+        "revision" : "513364f870f6bfc468f9d2ff0a95caccc10044c5",
+        "version" : "5.10.2"
+      }
+    },
+    {
+      "identity" : "sdwebimage",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SDWebImage/SDWebImage.git",
+      "state" : {
+        "revision" : "e7d3256c497af9330a0df866ee38f544ddd87c49",
+        "version" : "5.20.1"
+      }
+    },
+    {
+      "identity" : "sdwebimageswiftui",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SDWebImage/SDWebImageSwiftUI.git",
+      "state" : {
+        "revision" : "451c6dfd5ecec2cf626d1d9ca81c2d4a60355172",
+        "version" : "3.1.3"
+      }
+    },
+    {
+      "identity" : "swift-sdk",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/descope/swift-sdk.git",
+      "state" : {
+        "revision" : "98fb7724f8f79e74782c2aa5c14c00ce37212264",
+        "version" : "0.9.12"
+      }
+    }
+  ],
+  "version" : 3
+}
