@@ -1,16 +1,9 @@
 import SwiftUI
-
-@main
-struct HitcraftApp: App {
-    var body: some Scene {
-        WindowGroup {
-            MainContentView()
-        }
-    }
-}
+import SwiftUI
+import DescopeKit
 
 struct MainContentView: View {
-    @StateObject private var authService = AuthService.shared
+    @StateObject private var authService = Services.shared.auth
     
     var body: some View {
         Group {
