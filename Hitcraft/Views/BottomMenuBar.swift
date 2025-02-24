@@ -5,7 +5,7 @@ struct BottomMenuBar: View {
     var onStartNewChat: () -> Void
     
     // Darker background color for header and bottom areas
-    private let darkAreaColor = Color(hex: "F0F0F0").opacity(0.9)
+    private let darkAreaColor = Color(hex: "E0E0E0")
     
     var body: some View {
         HStack(spacing: 0) {

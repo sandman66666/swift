@@ -5,7 +5,7 @@ struct HistoryView: View {
     @State private var expandedCardId: UUID? = nil
     
     // Darker background color for header and bottom areas
-    private let darkAreaColor = Color(hex: "F0F0F0").opacity(0.9)
+    private let darkAreaColor = Color(hex: "E0E0E0")
     
     // Sample chat items - these would come from your API in a real app
     private let chatItems = [
@@ -97,6 +97,10 @@ struct HistoryView: View {
             
             // Save current time for the chat freshness check
             UserDefaults.standard.set(Date(), forKey: "lastChatTime")
+            
+            // Save in UserDefaults that we're loading from history
+            // This helps the ChatContentView know it needs to load history
+            UserDefaults.standard.set(true, forKey: "loadingFromHistory")
             
             // Navigate to the chat tab
             NotificationCenter.default.post(

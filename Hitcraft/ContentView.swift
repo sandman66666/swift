@@ -10,7 +10,7 @@ struct ChatContentView: View {
     @State private var isLoadingMessages = true
     
     // Darker background color for header and bottom areas
-    private let darkAreaColor = Color(hex: "F0F0F0").opacity(0.9)
+    private let darkAreaColor = Color(hex: "E0E0E0")
     
     var body: some View {
         VStack(spacing: 0) {
@@ -112,12 +112,49 @@ struct ChatContentView: View {
             .background(darkAreaColor)
         }
         .task {
-            await loadInitialChat()
+            await loadChat()
         }
         .alert("Error", isPresented: $showError) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(error?.localizedDescription ?? "An error occurred")
+        }
+    }
+    
+    func loadChat() async {
+        isLoadingMessages = true
+        
+        // Check if we're loading a specific thread
+        if let threadId = ChatService.shared.activeThreadId {
+            print("Loading existing thread: \(threadId)")
+            
+            // For a real app, you'd load messages from this thread
+            // Since we don't have a get thread messages endpoint, we'll generate mock messages
+            
+            // Add a welcome message and a fake previous message exchange
+            let welcomeMessage = ChatMessage(
+                content: "Welcome back to our conversation! How can I help you today?",
+                sender: "assistant",
+                timestamp: Date().addingTimeInterval(-3600) // 1 hour ago
+            )
+            
+            let userMessage = ChatMessage(
+                content: "I was working on a song earlier",
+                sender: "user",
+                timestamp: Date().addingTimeInterval(-3500) // 58 minutes ago
+            )
+            
+            let assistantResponse = ChatMessage(
+                content: "Great! I remember we were discussing your song. Would you like to continue where we left off?",
+                sender: "assistant",
+                timestamp: Date().addingTimeInterval(-3450) // 57 minutes ago
+            )
+            
+            messages = [welcomeMessage, userMessage, assistantResponse]
+            isLoadingMessages = false
+        } else {
+            // Start a new chat
+            await loadInitialChat()
         }
     }
     
