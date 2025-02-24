@@ -2,7 +2,7 @@ import SwiftUI
 import DescopeKit
 
 struct MainAppScreen: View {
-    @StateObject private var authService = Services.shared.auth
+    @EnvironmentObject private var authService: AuthService
     @State private var artists: [ArtistProfile] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
@@ -78,124 +78,81 @@ struct MainAppScreen: View {
         
         do {
             print("🔄 Loading artists...")
-            let token = await authService.getToken()
-            if let token = token {
-                print("✅ Token available: \(token.prefix(20))...")
-            } else {
-                print("⚠️ No token available")
-            }
-            
-            // Try different API endpoints if needed
-            let endpoints = [
-                "/api/v1/artist",
-                "/api/v1/artists",  // Try plural
-                "/api/v2/artist"    // Try v2 if available
-            ]
-            
-            var lastError: Error? = nil
-            
-            for endpoint in endpoints {
-                do {
-                    print("🎯 Trying endpoint: \(endpoint)")
-                    let response: ApiResponse<[ArtistProfile]> = try await Services.shared.api.get(path: endpoint)
-                    print("✅ Success! Got \(response.data.count) artists")
-                    
-                    await MainActor.run {
-                        artists = response.data
-                    }
-                    return
-                } catch {
-                    print("❌ Failed with endpoint \(endpoint): \(error)")
-                    lastError = error
-                    // Continue to next endpoint
-                }
-            }
-            
-            // If we got here, all endpoints failed
-            throw lastError ?? NSError(domain: "ApiClient", code: -1, userInfo: [NSLocalizedDescriptionKey: "All API endpoints failed"])
-            
+            artists = try await Services.shared.artistApi.list()
+        } catch let error as ApiError {
+            print("❌ Error loading artists: \(error)")
+            errorMessage = error.errorDescription ?? "An unexpected error occurred"
+            showError = true
         } catch {
-            print("❌ Final error loading artists: \(error)")
-            await MainActor.run {
-                if let urlError = error as? URLError {
-                    switch urlError.code {
-                    case .notConnectedToInternet:
-                        errorMessage = "No internet connection. Please check your connection and try again."
-                    case .timedOut:
-                        errorMessage = "Request timed out. Please try again."
-                    default:
-                        errorMessage = "Network error: \(urlError.localizedDescription)"
-                    }
-                } else {
-                    errorMessage = "Server error: \(error.localizedDescription)\nPlease try again later."
-                }
-                showError = true
-            }
+            print("❌ Unexpected error loading artists: \(error)")
+            errorMessage = "An unexpected error occurred. Please try again."
+            showError = true
         }
     }
-    struct ArtistCard: View {
-        let artist: ArtistProfile
-        
-        var body: some View {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    // Profile image or placeholder
-                    if let imageUrl = artist.imageUrl {
-                        AsyncImage(url: URL(string: imageUrl)) { image in
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                        } placeholder: {
-                            Color.gray
-                        }
+}
+
+struct ArtistCard: View {
+    let artist: ArtistProfile
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                // Profile image or placeholder
+                if let imageUrl = artist.imageUrl {
+                    AsyncImage(url: URL(string: imageUrl)) { image in
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        Color.gray
+                    }
+                    .frame(width: 60, height: 60)
+                    .clipShape(Circle())
+                } else {
+                    Circle()
+                        .fill(Color.gray.opacity(0.3))
                         .frame(width: 60, height: 60)
-                        .clipShape(Circle())
-                    } else {
-                        Circle()
-                            .fill(Color.gray.opacity(0.3))
-                            .frame(width: 60, height: 60)
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(artist.name)
-                            .font(.headline)
-                        Text(artist.email)
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                    }
-                    
-                    Spacer()
-                    
-                    Image(systemName: "chevron.right")
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(artist.name)
+                        .font(.headline)
+                    Text(artist.email)
+                        .font(.subheadline)
                         .foregroundColor(.gray)
                 }
                 
-                if let about = artist.about {
-                    Text(about)
-                        .font(.body)
-                        .lineLimit(2)
-                }
+                Spacer()
                 
-                if let genres = artist.preferredGenres, !genres.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack {
-                            ForEach(genres, id: \.self) { genre in
-                                Text(genre)
-                                    .font(.caption)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(Color.blue.opacity(0.1))
-                                    .foregroundColor(.blue)
-                                    .clipShape(Capsule())
-                            }
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.gray)
+            }
+            
+            if let about = artist.about {
+                Text(about)
+                    .font(.body)
+                    .lineLimit(2)
+            }
+            
+            if let genres = artist.preferredGenres, !genres.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack {
+                        ForEach(genres, id: \.self) { genre in
+                            Text(genre)
+                                .font(.caption)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.blue.opacity(0.1))
+                                .foregroundColor(.blue)
+                                .clipShape(Capsule())
                         }
                     }
                 }
             }
-            .padding()
-            .background(Color(.systemBackground))
-            .cornerRadius(12)
-            .shadow(radius: 2)
         }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(radius: 2)
     }
 }
