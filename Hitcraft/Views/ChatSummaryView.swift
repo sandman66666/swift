@@ -65,6 +65,22 @@ struct ChatSummaryView: View {
                                         expandedCardId = item.id
                                     }
                                 }
+                            },
+                            onLoadChat: {
+                                // Handle loading chat from history
+                                if let threadId = item.threadId {
+                                    ChatService.shared.activeThreadId = threadId
+                                    
+                                    // Save current time for the chat freshness check
+                                    UserDefaults.standard.set(Date(), forKey: "lastChatTime")
+                                    
+                                    // Navigate to the chat tab
+                                    NotificationCenter.default.post(
+                                        name: NSNotification.Name("SwitchToTab"),
+                                        object: nil,
+                                        userInfo: ["tab": MenuTab.chat]
+                                    )
+                                }
                             }
                         )
                     }
@@ -74,93 +90,6 @@ struct ChatSummaryView: View {
             }
         }
         .background(Color.white)
-    }
-}
-
-// Models
-struct ChatItem: Identifiable {
-    let id = UUID()
-    let title: String
-    var details: ChatDetails?
-}
-
-struct ChatDetails {
-    let pluginName: String
-    let year: String
-    let presetLink: String
-}
-
-// Components
-struct ChatHistoryCard: View {
-    let item: ChatItem
-    let isExpanded: Bool
-    let onTap: () -> Void
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Title row with chat bubble
-            Button(action: onTap) {
-                HStack(alignment: .top, spacing: 12) {
-                    Image("chatbubble")
-                        .resizable()
-                        .frame(width: 20, height: 20)
-                    
-                    Text(item.title)
-                        .font(HitCraftFonts.poppins(14, weight: .light))
-                        .foregroundColor(HitCraftColors.text)
-                        .lineSpacing(6)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-            .buttonStyle(PlainButtonStyle())
-            
-            // Expanded details
-            if isExpanded, let details = item.details {
-                VStack(alignment: .leading, spacing: 8) {
-                    DetailRow(title: "Plugin name", value: details.pluginName)
-                    DetailRow(title: "Year", value: details.year)
-                    DetailRow(title: "link to preset", value: details.presetLink, isLink: true)
-                    
-                    Button(action: {}) {
-                        HStack {
-                            Text("Take me to this Chat")
-                                .font(HitCraftFonts.poppins(14, weight: .medium))
-                                .foregroundColor(HitCraftColors.accent)
-                            Image(systemName: "arrow.right")
-                                .foregroundColor(HitCraftColors.accent)
-                        }
-                    }
-                    .padding(.top, 4)
-                }
-                .padding(.leading, 32)
-            }
-        }
-        .padding(.vertical, 19)
-        .padding(.horizontal, 20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(HitCraftColors.background)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(HitCraftColors.border, lineWidth: 1)
-        )
-    }
-}
-
-struct DetailRow: View {
-    let title: String
-    let value: String
-    var isLink: Bool = false
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(HitCraftFonts.poppins(12, weight: .light))
-                .foregroundColor(.gray)
-            Text(value)
-                .font(HitCraftFonts.poppins(14, weight: .light))
-                .foregroundColor(isLink ? .blue : .black)
-        }
     }
 }
 

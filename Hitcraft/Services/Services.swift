@@ -2,21 +2,22 @@ import Foundation
 import DescopeKit
 import UIKit
 
-// MARK: - Services
 @MainActor
 final class Services {
     static let shared = Services()
     
     let auth: AuthService
     let artistApi: ArtistApi
+    let chatService: ChatService
     
     private init() {
         auth = AuthService.shared
         artistApi = ArtistApi.shared
+        chatService = ChatService.shared
     }
 }
 
-// MARK: - AuthService
+// AuthService.swift
 @MainActor
 final class AuthService: ObservableObject {
     @Published var isAuthenticated = false
@@ -37,10 +38,6 @@ final class AuthService: ObservableObject {
     
     private func checkAuthentication() async -> Bool {
         return Descope.sessionManager.session != nil
-    }
-    
-    func getToken() async -> String? {
-        return Descope.sessionManager.session?.sessionToken.jwt
     }
     
     func startAuthFlow() {
@@ -64,7 +61,6 @@ final class AuthService: ObservableObject {
     }
 }
 
-// MARK: - AuthService Delegate
 extension AuthService: DescopeFlowViewControllerDelegate {
     nonisolated func flowViewControllerDidFinish(_ controller: DescopeFlowViewController, response: AuthenticationResponse) {
         Task { @MainActor in
@@ -82,7 +78,6 @@ extension AuthService: DescopeFlowViewControllerDelegate {
         }
     }
     
-    // Required delegate methods
     nonisolated func flowViewControllerDidUpdateState(_ controller: DescopeFlowViewController, to: DescopeFlowState, from: DescopeFlowState) {}
     nonisolated func flowViewControllerDidBecomeReady(_ controller: DescopeFlowViewController) {}
     nonisolated func flowViewControllerDidCancel(_ controller: DescopeFlowViewController) {

@@ -1,3 +1,5 @@
+// File: Hitcraft/Services/ApiError.swift
+
 import Foundation
 
 enum ApiError: Error {

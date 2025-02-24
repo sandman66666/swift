@@ -1,86 +1,180 @@
-//
-//  ContentView.swift
-//  Hitcraft
-//
-//  Created by Oudi Antebi on 20/02/2025.
-//
-
 import SwiftUI
-import CoreData
 
-struct ContentView: View {
-    @Environment(\.managedObjectContext) private var viewContext
-
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
-        animation: .default)
-    private var items: FetchedResults<Item>
-
+struct ChatContentView: View {
+    let defaultArtist: ArtistProfile
+    @State private var messages: [ChatMessage] = []
+    @State private var messageText = ""
+    @State private var isTyping = false
+    @State private var error: Error?
+    @State private var showError = false
+    @State private var isLoadingMessages = true
+    
+    // Darker background color for header and bottom areas
+    private let darkAreaColor = Color(hex: "F0F0F0").opacity(0.9)
+    
     var body: some View {
-        NavigationView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp!, formatter: itemFormatter)")
-                    } label: {
-                        Text(item.timestamp!, formatter: itemFormatter)
+        VStack(spacing: 0) {
+            // Top Header with new chat button - darker background
+            HStack {
+                Spacer()
+                Text("CHAT")
+                    .font(HitCraftFonts.poppins(18, weight: .light))
+                    .foregroundColor(.black)
+                Spacer()
+                
+                // New Chat Button
+                Button(action: {
+                    // Start new chat
+                    Task {
+                        ChatService.shared.activeThreadId = nil
+                        await loadInitialChat()
+                    }
+                }) {
+                    Image(systemName: "square.and.pencil")
+                        .font(.system(size: 20))
+                        .foregroundColor(HitCraftColors.accent)
+                }
+                .padding(.trailing, 20)
+            }
+            .frame(height: 44)
+            .padding(.leading, 20)
+            .background(darkAreaColor)
+            
+            // Chat Messages
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: 16) {
+                        if isLoadingMessages {
+                            ProgressView()
+                                .padding()
+                        } else if messages.isEmpty {
+                            VStack(spacing: 16) {
+                                Text("Start a new conversation")
+                                    .font(HitCraftFonts.poppins(18, weight: .medium))
+                                Text("Ask for help with your music production, lyrics, or any other musical needs.")
+                                    .font(HitCraftFonts.poppins(14, weight: .light))
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
+                            }
+                            .padding(.top, 100)
+                        } else {
+                            ForEach(messages) { message in
+                                MessageBubble(isFromUser: message.isFromUser, text: message.text)
+                                    .id(message.id)
+                            }
+                        }
+                        
+                        if isTyping {
+                            HStack {
+                                Text("Typing")
+                                    .font(HitCraftFonts.poppins(12, weight: .light))
+                                    .foregroundColor(.gray)
+                                TypingIndicator()
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.leading, 24)
+                        }
+                    }
+                    .padding(.vertical, 16)
+                }
+                .onChange(of: messages) { _ in
+                    if let lastMessage = messages.last {
+                        withAnimation {
+                            proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                        }
                     }
                 }
-                .onDelete(perform: deleteItems)
             }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
+            .background(HitCraftColors.background)
+            
+            // Custom Input Bar - no border, darker background
+            HStack {
+                TextField("Message HitCraft...", text: $messageText)
+                    .font(HitCraftFonts.poppins(15, weight: .light))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(darkAreaColor)
+                    .foregroundColor(.primary)
+                
+                Button(action: sendMessage) {
+                    Circle()
+                        .fill(HitCraftColors.primaryGradient)
+                        .frame(width: 40, height: 40)
+                        .overlay(
+                            Image(systemName: "arrow.up")
+                                .foregroundColor(.white)
+                        )
                 }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
+                .disabled(messageText.isEmpty || isTyping)
+                .padding(.trailing, 16)
             }
-            Text("Select an item")
+            .padding(.vertical, 10)
+            .background(darkAreaColor)
+        }
+        .task {
+            await loadInitialChat()
+        }
+        .alert("Error", isPresented: $showError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(error?.localizedDescription ?? "An error occurred")
         }
     }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
-
+    
+    func loadInitialChat() async {
+        isLoadingMessages = true
+        do {
+            // Create a new chat with welcome message
+            let message = try await ChatService.shared.sendMessage(
+                text: "Hello, I'd like to create music",
+                artistId: defaultArtist.id
+            )
+            
+            // Add an initial welcome message
+            let welcomeMessage = ChatMessage(
+                content: "Welcome! I'm HitCraft, your AI music assistant. How can I help with your music today?",
+                sender: "assistant"
+            )
+            
+            messages = [welcomeMessage, message]
+        } catch {
+            self.error = error
+            showError = true
+        }
+        isLoadingMessages = false
+    }
+    
+    private func sendMessage() {
+        guard !messageText.isEmpty else { return }
+        
+        let userText = messageText
+        messageText = ""
+        
+        // Create and append user message immediately
+        let userMessage = ChatMessage(
+            content: userText,
+            sender: "user"
+        )
+        messages.append(userMessage)
+        
+        // Show typing indicator
+        isTyping = true
+        
+        // Send message to API
+        Task {
             do {
-                try viewContext.save()
+                let responseMessage = try await ChatService.shared.sendMessage(
+                    text: userText,
+                    artistId: defaultArtist.id
+                )
+                
+                isTyping = false
+                messages.append(responseMessage)
             } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
+                isTyping = false
+                self.error = error
+                showError = true
             }
         }
     }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            offsets.map { items[$0] }.forEach(viewContext.delete)
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
-        }
-    }
-}
-
-private let itemFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .short
-    formatter.timeStyle = .medium
-    return formatter
-}()
-
-#Preview {
-    ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
 }

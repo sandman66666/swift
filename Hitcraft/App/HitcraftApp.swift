@@ -5,8 +5,6 @@ import DescopeKit
 struct HitcraftApp: App {
     // Initialize auth service at app level
     @StateObject private var authService = Services.shared.auth
-    @StateObject private var tabSelection = TabSelection()
-    @State private var selectedArtist = ArtistProfile.sample
     
     init() {
         // Initialize Descope with your project ID
@@ -17,63 +15,60 @@ struct HitcraftApp: App {
     
     var body: some Scene {
         WindowGroup {
-            RootView()
+            MainRootView()
                 .environmentObject(authService)
-                .environmentObject(tabSelection)
         }
     }
 }
 
-struct RootView: View {
+struct MainRootView: View {
     @EnvironmentObject private var authService: AuthService
-    @EnvironmentObject private var tabSelection: TabSelection
-    @State private var selectedArtist = ArtistProfile.sample
+    @State private var defaultArtist = ArtistProfile.sample
+    @State private var selectedTab: MenuTab = .chat
+    @State private var error: Error?
+    @State private var showError = false
     
     var body: some View {
         Group {
             if authService.isAuthenticated {
-                TabView(selection: $tabSelection.selectedTab) {
-                    // Home Tab
-                    HomeView(selectedArtist: $selectedArtist)
-                        .environmentObject(authService)
-                        .environmentObject(tabSelection)
-                        .tabItem {
-                            Image(systemName: "house.fill")
-                            Text("Home")
-                        }
-                        .tag(0)
+                VStack(spacing: 0) {
+                    // Main Content based on selected tab
+                    mainContentView
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                     
-                    // Chat Tab
-                    ChatView(selectedArtist: $selectedArtist)
-                        .tabItem {
-                            Image(systemName: "message")
-                            Text("Chat")
-                        }
-                        .tag(1)
-                    
-                    // Library/Browse Tab
-                    BrowseView(selectedArtist: $selectedArtist)
-                        .tabItem {
-                            Image(systemName: "music.note.list")
-                            Text("Library")
-                        }
-                        .tag(2)
-                    
-                    // History Tab
-                    ChatSummaryView(
-                        isOpen: .constant(true),
-                        selectedArtist: $selectedArtist
-                    )
-                    .tabItem {
-                        Image(systemName: "clock")
-                        Text("History")
-                    }
-                    .tag(3)
+                    // Bottom Menu Bar
+                    BottomMenuBar(selectedTab: $selectedTab, onStartNewChat: {
+                        ChatService.shared.activeThreadId = nil
+                        selectedTab = .chat
+                    })
                 }
-                .tint(HitCraftColors.accent)
+                .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SwitchToTab"))) { notification in
+                    if let tab = notification.userInfo?["tab"] as? MenuTab {
+                        selectedTab = tab
+                    }
+                }
             } else {
                 LoginView()
             }
+        }
+        .alert("Error", isPresented: $showError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(error?.localizedDescription ?? "An error occurred")
+        }
+    }
+    
+    @ViewBuilder
+    private var mainContentView: some View {
+        switch selectedTab {
+        case .history:
+            HistoryView()
+        case .chat:
+            ChatContentView(defaultArtist: defaultArtist)
+        case .productions:
+            ProductionsView()
+        case .settings:
+            SettingsView()
         }
     }
 }

@@ -14,17 +14,15 @@ enum HCEnvironment {
     
     // API Endpoints
     enum Endpoint {
-    static let base = "/api/\(HCEnvironment.apiVersion)"
-    
-    // Artist endpoints
-    static let artists = "\(base)/artist"
-    static func artist(_ id: String) -> String { "\(artists)/\(id)" }
-    static func artistInstructions(_ id: String) -> String { "\(artist(id))/instructions" }
-    static func artistInfo(_ id: String) -> String { "\(artist(id))/info" }
-    
-    // Chat endpoints
-    static let chat = "\(base)/chat"
-    static func chatMessages(_ artistId: String) -> String { "\(chat)/\(artistId)/messages" }
-    static func chatSend(_ artistId: String) -> String { "\(chat)/\(artistId)/send" }
+        static let base = "/api/\(HCEnvironment.apiVersion)"
+        
+        // Artist endpoints
+        static let artists = "\(base)/artist"
+        static func artist(_ id: String) -> String { "\(artists)/\(id)" }
+        
+        // Chat endpoints
+        static let chat = "\(base)/chat"
+        static func chatMessages(threadId: String) -> String { "\(chat)/\(threadId)/messages" }
+        static func createChat(artistId: String) -> String { "\(chat)/" }
     }
 }

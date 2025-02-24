@@ -20,20 +20,6 @@ final class ArtistApi {
         let response: ArtistProfile = try await apiClient.get(path: HCEnvironment.Endpoint.artist(artistId))
         return response
     }
-    
-    func updateInstructions(artistId: String, instructions: String) async throws -> ArtistProfile {
-        return try await apiClient.post(
-            path: HCEnvironment.Endpoint.artistInstructions(artistId),
-            body: ["instructions": instructions]
-        )
-    }
-    
-    func updateInfo(artistId: String, info: [String: Any]) async throws -> ArtistProfile {
-        return try await apiClient.post(
-            path: HCEnvironment.Endpoint.artistInfo(artistId),
-            body: info
-        )
-    }
 }
 
 extension ArtistProfile {
