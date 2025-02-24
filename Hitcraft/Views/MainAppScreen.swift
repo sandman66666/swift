@@ -1,3 +1,4 @@
+// MainAppScreen.swift
 import SwiftUI
 import DescopeKit
 
@@ -112,14 +113,20 @@ struct ArtistCard: View {
                     Circle()
                         .fill(Color.gray.opacity(0.3))
                         .frame(width: 60, height: 60)
+                        .overlay(
+                            Image(systemName: "person.fill")
+                                .foregroundColor(.white)
+                        )
                 }
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(artist.name)
                         .font(.headline)
-                    Text(artist.email)
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
+                    if let role = artist.role?.primary {
+                        Text(role)
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
                 }
                 
                 Spacer()
@@ -155,4 +162,9 @@ struct ArtistCard: View {
         .cornerRadius(12)
         .shadow(radius: 2)
     }
+}
+
+#Preview {
+    MainAppScreen()
+        .environmentObject(Services.shared.auth)
 }

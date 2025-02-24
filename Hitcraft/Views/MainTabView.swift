@@ -1,33 +1,19 @@
 import SwiftUI
 import DescopeKit
 
-@main
-struct HitcraftApp: App {
-    // Initialize auth service at app level
-    @StateObject private var authService = Services.shared.auth
-    @StateObject private var tabSelection = TabSelection()
-    @State private var selectedArtist = ArtistProfile.sample
+final class TabSelection: ObservableObject {
+    @Published var selectedTab = 0
     
-    init() {
-        // Initialize Descope with your project ID
-        Descope.setup(projectId: "P2rIvbtGcXTcUfT68LGuVqPitlJd") { config in
-            config.baseURL = "https://auth.dev.hitcraft.ai"
-        }
-    }
-    
-    var body: some Scene {
-        WindowGroup {
-            RootView()
-                .environmentObject(authService)
-                .environmentObject(tabSelection)
-        }
+    func switchTab(to tab: Int) {
+        selectedTab = tab
     }
 }
 
-struct RootView: View {
-    @EnvironmentObject private var authService: AuthService
-    @EnvironmentObject private var tabSelection: TabSelection
+struct MainTabView: View {
+    @StateObject private var tabSelection = TabSelection()
+    @StateObject private var authService = Services.shared.auth
     @State private var selectedArtist = ArtistProfile.sample
+    @State private var initialMessage: String?
     
     var body: some View {
         Group {
@@ -71,9 +57,14 @@ struct RootView: View {
                     .tag(3)
                 }
                 .tint(HitCraftColors.accent)
+                .environmentObject(tabSelection)
             } else {
                 LoginView()
             }
         }
     }
+}
+
+#Preview {
+    MainTabView()
 }
