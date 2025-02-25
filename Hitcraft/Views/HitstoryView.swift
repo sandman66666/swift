@@ -28,17 +28,7 @@ struct HistoryView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Top Header
-            HStack {
-                Spacer()
-                Text("HISTORY")
-                    .font(HitCraftFonts.header())
-                    .foregroundColor(HitCraftColors.text)
-                Spacer()
-            }
-            .frame(height: 44)
-            .padding(.horizontal, 20)
-            .background(HitCraftColors.headerFooterBackground)
-            .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
+            ScreenHeader(title: "HISTORY")
             
             // Search Bar
             HStack {

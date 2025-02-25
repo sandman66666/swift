@@ -1,22 +1,5 @@
+// ChatHistoryComponents.swift
 import SwiftUI
-
-// First, add the DetailRow component directly in this file
-struct DetailRow: View {
-    let title: String
-    let value: String
-    var isLink: Bool = false
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(HitCraftFonts.caption())
-                .foregroundColor(HitCraftColors.secondaryText)
-            Text(value)
-                .font(HitCraftFonts.body())
-                .foregroundColor(isLink ? HitCraftColors.accent : HitCraftColors.text)
-        }
-    }
-}
 
 // ChatHistoryCard component for both HistoryView and ChatSummaryView
 struct ChatHistoryCardView: View {
@@ -24,6 +7,7 @@ struct ChatHistoryCardView: View {
     let isExpanded: Bool
     let onTap: () -> Void
     let onLoadChat: () -> Void
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -61,6 +45,7 @@ struct ChatHistoryCardView: View {
                         }
                     }
                     .padding(.top, 4)
+                    .hitCraftStyle()
                 }
                 .padding(.leading, 32)
             } else if !isExpanded {
@@ -75,17 +60,21 @@ struct ChatHistoryCardView: View {
                         .clipShape(Capsule())
                 }
                 .padding(.leading, 32)
+                .hitCraftStyle()
             }
         }
         .padding(.vertical, 19)
         .padding(.horizontal, 20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
+        .background(HitCraftColors.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: HitCraftLayout.cardCornerRadius))
         .overlay(
             RoundedRectangle(cornerRadius: HitCraftLayout.cardCornerRadius)
                 .stroke(HitCraftColors.border, lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+        .shadow(color: Color.black.opacity(themeManager.currentTheme == .dark ? 0.2 : 0.05), radius: 2, x: 0, y: 1)
     }
 }
+
+// Also define ChatHistoryCard as an alias to ChatHistoryCardView for backward compatibility
+typealias ChatHistoryCard = ChatHistoryCardView

@@ -1,3 +1,4 @@
+// ChatHistoryModels.swift - Data models only
 import SwiftUI
 
 // Models needed for HistoryView and ChatSummaryView
