@@ -4,8 +4,8 @@ struct BottomMenuBar: View {
     @Binding var selectedTab: MenuTab
     var onStartNewChat: () -> Void
     
-    // Darker background color for header and bottom areas
-    private let darkAreaColor = Color(hex: "E0E0E0")
+    // Background color for header and bottom areas
+    private let backgroundColor = HitCraftColors.darkAreaColor
     
     var body: some View {
         HStack(spacing: 0) {
@@ -61,8 +61,8 @@ struct BottomMenuBar: View {
             }
         }
         .frame(height: 60)
-        .background(darkAreaColor)
-        // Remove any top border/divider line
+        .background(backgroundColor)
+        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: -1)
     }
 }
 
@@ -77,14 +77,23 @@ struct MenuButton: View {
             VStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.system(size: 22))
-                    .foregroundColor(isSelected ? HitCraftColors.accent : Color.gray)
+                    .foregroundColor(isSelected ? HitCraftColors.accent : HitCraftColors.secondaryText)
                 
                 Text(text)
-                    .font(HitCraftFonts.poppins(12, weight: .light))
-                    .foregroundColor(isSelected ? HitCraftColors.accent : Color.gray)
+                    .font(HitCraftFonts.caption())
+                    .foregroundColor(isSelected ? HitCraftColors.accent : HitCraftColors.secondaryText)
             }
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(PlainButtonStyle())
+        .scaleEffect(isSelected ? 1.05 : 1.0)
+        .animation(.easeInOut(duration: 0.2), value: isSelected)
+    }
+}
+
+#Preview {
+    VStack {
+        Spacer()
+        BottomMenuBar(selectedTab: .constant(.chat), onStartNewChat: {})
     }
 }

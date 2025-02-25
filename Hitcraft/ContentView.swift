@@ -9,17 +9,17 @@ struct ChatContentView: View {
     @State private var showError = false
     @State private var isLoadingMessages = true
     
-    // Darker background color for header and bottom areas
-    private let darkAreaColor = Color(hex: "E0E0E0")
+    // Background color for header and bottom areas
+    private let headerFooterColor = HitCraftColors.headerFooterBackground
     
     var body: some View {
         VStack(spacing: 0) {
-            // Top Header with new chat button - darker background
+            // Top Header with new chat button
             HStack {
                 Spacer()
                 Text("CHAT")
-                    .font(HitCraftFonts.poppins(18, weight: .light))
-                    .foregroundColor(.black)
+                    .font(HitCraftFonts.header())
+                    .foregroundColor(HitCraftColors.text)
                 Spacer()
                 
                 // New Chat Button
@@ -35,24 +35,28 @@ struct ChatContentView: View {
                         .foregroundColor(HitCraftColors.accent)
                 }
                 .padding(.trailing, 20)
+                .hitCraftStyle()
             }
             .frame(height: 44)
             .padding(.leading, 20)
-            .background(darkAreaColor)
+            .background(headerFooterColor)
+            .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
             
             // Chat Messages
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(spacing: 16) {
+                    LazyVStack(spacing: HitCraftLayout.messageBubbleSpacing) {
                         if isLoadingMessages {
                             ProgressView()
                                 .padding()
                         } else if messages.isEmpty {
                             VStack(spacing: 16) {
                                 Text("Start a new conversation")
-                                    .font(HitCraftFonts.poppins(18, weight: .medium))
+                                    .font(HitCraftFonts.subheader())
+                                    .foregroundColor(HitCraftColors.text)
                                 Text("Ask for help with your music production, lyrics, or any other musical needs.")
-                                    .font(HitCraftFonts.poppins(14, weight: .light))
+                                    .font(HitCraftFonts.body())
+                                    .foregroundColor(HitCraftColors.secondaryText)
                                     .multilineTextAlignment(.center)
                                     .padding(.horizontal)
                             }
@@ -67,8 +71,8 @@ struct ChatContentView: View {
                         if isTyping {
                             HStack {
                                 Text("Typing")
-                                    .font(HitCraftFonts.poppins(12, weight: .light))
-                                    .foregroundColor(.gray)
+                                    .font(HitCraftFonts.caption())
+                                    .foregroundColor(HitCraftColors.secondaryText)
                                 TypingIndicator()
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -87,29 +91,13 @@ struct ChatContentView: View {
             }
             .background(HitCraftColors.background)
             
-            // Custom Input Bar - no border, darker background
-            HStack {
-                TextField("Message HitCraft...", text: $messageText)
-                    .font(HitCraftFonts.poppins(15, weight: .light))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(darkAreaColor)
-                    .foregroundColor(.primary)
-                
-                Button(action: sendMessage) {
-                    Circle()
-                        .fill(HitCraftColors.primaryGradient)
-                        .frame(width: 40, height: 40)
-                        .overlay(
-                            Image(systemName: "arrow.up")
-                                .foregroundColor(.white)
-                        )
-                }
-                .disabled(messageText.isEmpty || isTyping)
-                .padding(.trailing, 16)
-            }
-            .padding(.vertical, 10)
-            .background(darkAreaColor)
+            // Custom Input Bar with embedded send button
+            ChatInput(
+                text: $messageText,
+                placeholder: "Type your message...",
+                isTyping: isTyping,
+                onSend: sendMessage
+            )
         }
         .task {
             await loadChat()
@@ -118,6 +106,8 @@ struct ChatContentView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(error?.localizedDescription ?? "An error occurred")
+                .font(HitCraftFonts.body())
+                .foregroundColor(HitCraftColors.text)
         }
     }
     
@@ -192,7 +182,10 @@ struct ChatContentView: View {
             content: userText,
             sender: "user"
         )
-        messages.append(userMessage)
+        
+        withAnimation {
+            messages.append(userMessage)
+        }
         
         // Show typing indicator
         isTyping = true
@@ -206,7 +199,10 @@ struct ChatContentView: View {
                 )
                 
                 isTyping = false
-                messages.append(responseMessage)
+                
+                withAnimation(.easeIn(duration: 0.3)) {
+                    messages.append(responseMessage)
+                }
             } catch {
                 isTyping = false
                 self.error = error

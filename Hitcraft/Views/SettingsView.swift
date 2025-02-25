@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var authService: AuthService
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     var body: some View {
         VStack(spacing: 0) {
@@ -9,20 +10,21 @@ struct SettingsView: View {
             HStack {
                 Spacer()
                 Text("SETTINGS")
-                    .font(HitCraftFonts.poppins(18, weight: .light))
-                    .foregroundColor(.black)
+                    .font(HitCraftFonts.header())
+                    .foregroundColor(HitCraftColors.text)
                 Spacer()
             }
             .frame(height: 44)
             .padding(.horizontal, 20)
-            .background(Color.white)
+            .background(HitCraftColors.headerFooterBackground)
             
             ScrollView {
                 VStack(spacing: 20) {
                     // Profile Section
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Profile")
-                            .font(HitCraftFonts.poppins(18, weight: .medium))
+                            .font(HitCraftFonts.subheader())
+                            .foregroundColor(HitCraftColors.text)
                             .padding(.horizontal, 20)
                         
                         SettingsCard {
@@ -37,16 +39,17 @@ struct SettingsView: View {
                                 
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Your Account")
-                                        .font(HitCraftFonts.poppins(16, weight: .medium))
+                                        .font(HitCraftFonts.subheader())
+                                        .foregroundColor(HitCraftColors.text)
                                     Text("Profile details and preferences")
-                                        .font(HitCraftFonts.poppins(14, weight: .light))
-                                        .foregroundColor(.gray)
+                                        .font(HitCraftFonts.body())
+                                        .foregroundColor(HitCraftColors.secondaryText)
                                 }
                                 
                                 Spacer()
                                 
                                 Image(systemName: "chevron.right")
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(HitCraftColors.secondaryText)
                             }
                         }
                     }
@@ -55,17 +58,45 @@ struct SettingsView: View {
                     // App Settings
                     VStack(alignment: .leading, spacing: 16) {
                         Text("App Settings")
-                            .font(HitCraftFonts.poppins(18, weight: .medium))
+                            .font(HitCraftFonts.subheader())
+                            .foregroundColor(HitCraftColors.text)
                             .padding(.horizontal, 20)
+                        
+                        // Theme selector
+                        SettingsCard {
+                            HStack {
+                                Circle()
+                                    .fill(HitCraftColors.accent.opacity(0.1))
+                                    .frame(width: 40, height: 40)
+                                    .overlay(
+                                        Image(systemName: themeManager.currentTheme == .dark ? "moon.fill" : "sun.max.fill")
+                                            .foregroundColor(HitCraftColors.accent)
+                                    )
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Appearance")
+                                        .font(HitCraftFonts.subheader())
+                                        .foregroundColor(HitCraftColors.text)
+                                    Text(themeManager.currentTheme.displayName + " Mode")
+                                        .font(HitCraftFonts.body())
+                                        .foregroundColor(HitCraftColors.secondaryText)
+                                }
+                                
+                                Spacer()
+                                
+                                Toggle("", isOn: Binding(
+                                    get: { themeManager.currentTheme == .dark },
+                                    set: { newValue in
+                                        themeManager.currentTheme = newValue ? .dark : .light
+                                    }
+                                ))
+                                .toggleStyle(SwitchToggleStyle(tint: HitCraftColors.accent))
+                            }
+                        }
                         
                         // Notifications
                         SettingsCard {
                             SettingsRow(icon: "bell.fill", title: "Notifications", subtitle: "Configure app notifications")
-                        }
-                        
-                        // Appearance
-                        SettingsCard {
-                            SettingsRow(icon: "paintbrush.fill", title: "Appearance", subtitle: "Dark mode, theme")
                         }
                         
                         // Storage & Data
@@ -77,7 +108,8 @@ struct SettingsView: View {
                     // Help and Support
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Help & Support")
-                            .font(HitCraftFonts.poppins(18, weight: .medium))
+                            .font(HitCraftFonts.subheader())
+                            .foregroundColor(HitCraftColors.text)
                             .padding(.horizontal, 20)
                         
                         // Contact Support
@@ -98,7 +130,7 @@ struct SettingsView: View {
                         }
                     }) {
                         Text("Log Out")
-                            .font(HitCraftFonts.poppins(16, weight: .medium))
+                            .font(HitCraftFonts.subheader())
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
@@ -112,6 +144,7 @@ struct SettingsView: View {
             }
         }
         .background(HitCraftColors.background)
+        .animation(.easeInOut(duration: 0.3), value: themeManager.currentTheme)
     }
 }
 
@@ -126,7 +159,7 @@ struct SettingsCard<Content: View>: View {
         content
             .padding(.vertical, 16)
             .padding(.horizontal, 20)
-            .background(Color.white)
+            .background(HitCraftColors.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .padding(.horizontal, 20)
     }
@@ -149,16 +182,17 @@ struct SettingsRow: View {
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(HitCraftFonts.poppins(16, weight: .medium))
+                    .font(HitCraftFonts.subheader())
+                    .foregroundColor(HitCraftColors.text)
                 Text(subtitle)
-                    .font(HitCraftFonts.poppins(14, weight: .light))
-                    .foregroundColor(.gray)
+                    .font(HitCraftFonts.body())
+                    .foregroundColor(HitCraftColors.secondaryText)
             }
             
             Spacer()
             
             Image(systemName: "chevron.right")
-                .foregroundColor(.gray)
+                .foregroundColor(HitCraftColors.secondaryText)
         }
     }
 }

@@ -25,7 +25,7 @@ struct MusicianHeader: View {
                         .clipShape(Circle())
                         
                         Text(artist.name)
-                            .font(HitCraftFonts.poppins(18, weight: .medium))
+                            .font(HitCraftFonts.subheader())
                             .foregroundColor(HitCraftColors.accent)
                         
                         Image(systemName: "chevron.down")
@@ -41,13 +41,13 @@ struct MusicianHeader: View {
                     .foregroundColor(HitCraftColors.accent)
             } else {
                 Text(artist.name)
-                    .font(HitCraftFonts.poppins(18, weight: .medium))
+                    .font(HitCraftFonts.subheader())
                     .foregroundColor(HitCraftColors.accent)
             }
             
             Text(showTalentGPT ? "TalentGPT™" : title)
-                .font(HitCraftFonts.poppins(18, weight: .light))
-                .foregroundColor(.black)
+                .font(HitCraftFonts.header())
+                .foregroundColor(HitCraftColors.text)
             Spacer()
         }
         .frame(height: 44)
@@ -80,13 +80,13 @@ struct MusicianPickerView: View {
                         
                         VStack(alignment: .leading) {
                             Text(artist.name)
-                                .font(HitCraftFonts.poppins(18, weight: .medium))
-                                .foregroundColor(.black)
+                                .font(HitCraftFonts.subheader())
+                                .foregroundColor(HitCraftColors.text)
                             
                             if let role = artist.role?.primary {
                                 Text(role)
-                                    .font(HitCraftFonts.poppins(14, weight: .light))
-                                    .foregroundColor(.gray)
+                                    .font(HitCraftFonts.body())
+                                    .foregroundColor(HitCraftColors.secondaryText)
                             }
                         }
                         
@@ -111,18 +111,5 @@ struct MusicianPickerView: View {
                 }
             }
         }
-    }
-}
-
-#Preview {
-    VStack {
-        MusicianHeader(
-            artist: ArtistProfile.sample,
-            showSwitchOption: true,
-            title: "CHAT",
-            showTalentGPT: false,
-            selectedArtist: .constant(ArtistProfile.sample)
-        )
-        Spacer()
     }
 }

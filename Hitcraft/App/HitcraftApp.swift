@@ -5,6 +5,8 @@ import DescopeKit
 struct HitcraftApp: App {
     // Initialize auth service at app level
     @StateObject private var authService = Services.shared.auth
+    // Initialize theme manager to be available globally
+    @StateObject private var themeManager = ThemeManager.shared
     
     init() {
         // Initialize Descope with your project ID
@@ -17,12 +19,15 @@ struct HitcraftApp: App {
         WindowGroup {
             MainRootView()
                 .environmentObject(authService)
+                .environmentObject(themeManager)
+                .preferredColorScheme(themeManager.currentTheme == .dark ? .dark : .light)
         }
     }
 }
 
 struct MainRootView: View {
     @EnvironmentObject private var authService: AuthService
+    @EnvironmentObject private var themeManager: ThemeManager
     @State private var defaultArtist = ArtistProfile.sample
     @State private var selectedTab: MenuTab = .chat
     @State private var error: Error?
@@ -47,6 +52,7 @@ struct MainRootView: View {
                         selectedTab = tab
                     }
                 }
+                .animation(.easeInOut(duration: 0.3), value: themeManager.currentTheme)
             } else {
                 LoginView()
             }

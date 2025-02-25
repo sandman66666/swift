@@ -5,6 +5,7 @@ struct ChatSummaryView: View {
     @Binding var selectedArtist: ArtistProfile
     @State private var searchText = ""
     @State private var expandedCardId: UUID? = nil
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     // Sample chat items
     private let chatItems = [
@@ -36,13 +37,14 @@ struct ChatSummaryView: View {
             // Search Bar
             HStack {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(.gray)
+                    .foregroundColor(HitCraftColors.secondaryText)
                 TextField("Search chats...", text: $searchText)
-                    .font(HitCraftFonts.poppins(15, weight: .light))
+                    .font(HitCraftFonts.body())
+                    .foregroundColor(HitCraftColors.text)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(Color.white)
+            .background(HitCraftColors.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: 25))
             .overlay(
                 RoundedRectangle(cornerRadius: 25)
@@ -54,7 +56,7 @@ struct ChatSummaryView: View {
             ScrollView {
                 VStack(spacing: 15) {
                     ForEach(chatItems) { item in
-                        ChatHistoryCard(
+                        ChatHistoryCardView(
                             item: item,
                             isExpanded: expandedCardId == item.id,
                             onTap: {
@@ -89,7 +91,8 @@ struct ChatSummaryView: View {
                 .padding(.top, 20)
             }
         }
-        .background(Color.white)
+        .background(HitCraftColors.background)
+        .animation(.easeInOut(duration: 0.3), value: themeManager.currentTheme)
     }
 }
 

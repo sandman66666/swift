@@ -1,11 +1,7 @@
 import SwiftUI
 
 struct ProductionsView: View {
-    @State private var selectedGenre = "All Genres"
-    @State private var selectedMood = "All Moods"
-    
-    let genres = ["All Genres", "Hip-Hop", "R&B", "Pop", "Electronic"]
-    let moods = ["All Moods", "Energetic", "Chill", "Dark", "Happy"]
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     var tracks: [Track] {
         // Sample tracks
@@ -18,56 +14,24 @@ struct ProductionsView: View {
             HStack {
                 Spacer()
                 Text("PRODUCTIONS")
-                    .font(HitCraftFonts.poppins(18, weight: .light))
-                    .foregroundColor(.black)
+                    .font(HitCraftFonts.header())
+                    .foregroundColor(HitCraftColors.text)
                 Spacer()
             }
             .frame(height: 44)
             .padding(.horizontal, 20)
-            .background(Color.white)
+            .background(HitCraftColors.headerFooterBackground)
+            .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
             
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
                     Text("Your Recent Productions")
-                        .font(HitCraftFonts.poppins(22, weight: .bold))
+                        .font(HitCraftFonts.subheader())
+                        .foregroundColor(HitCraftColors.text)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 20)
                         .padding(.top, 24)
-                    
-                    // Filter Menus
-                    HStack(spacing: 12) {
-                        // Genre Menu
-                        Menu {
-                            ForEach(genres, id: \.self) { genre in
-                                Button(action: { selectedGenre = genre }) {
-                                    if genre == selectedGenre {
-                                        Label(genre, systemImage: "checkmark")
-                                    } else {
-                                        Text(genre)
-                                    }
-                                }
-                            }
-                        } label: {
-                            FilterButton(title: selectedGenre)
-                        }
-                        
-                        // Mood Menu
-                        Menu {
-                            ForEach(moods, id: \.self) { mood in
-                                Button(action: { selectedMood = mood }) {
-                                    if mood == selectedMood {
-                                        Label(mood, systemImage: "checkmark")
-                                    } else {
-                                        Text(mood)
-                                    }
-                                }
-                            }
-                        } label: {
-                            FilterButton(title: selectedMood)
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
+                        .padding(.bottom, 16)
                     
                     // Tracks Grid
                     LazyVGrid(
@@ -81,17 +45,21 @@ struct ProductionsView: View {
                             ProductionTrackCard(track: track)
                         }
                     }
-                    .padding(20)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
                 }
             }
+            .background(HitCraftColors.background)
         }
         .background(HitCraftColors.background)
+        .animation(.easeInOut(duration: 0.3), value: themeManager.currentTheme)
     }
 }
 
 struct ProductionTrackCard: View {
     let track: Track
     @State private var isPlaying = false
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -101,14 +69,15 @@ struct ProductionTrackCard: View {
                     AsyncImage(url: url) { image in
                         image.resizable()
                     } placeholder: {
-                        Color.gray.opacity(0.3)
+                        Rectangle()
+                            .fill(HitCraftColors.secondaryText.opacity(0.3))
                     }
                     .aspectRatio(1, contentMode: .fill)
                     .frame(maxWidth: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                 } else {
                     Rectangle()
-                        .fill(Color.gray.opacity(0.3))
+                        .fill(HitCraftColors.secondaryText.opacity(0.3))
                         .aspectRatio(1, contentMode: .fill)
                         .frame(maxWidth: .infinity)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -124,38 +93,54 @@ struct ProductionTrackCard: View {
                     isPlaying.toggle()
                 }) {
                     Circle()
-                        .fill(.white)
+                        .fill(Color.white)
                         .frame(width: 44, height: 44)
+                        .shadow(color: Color.black.opacity(0.2), radius: 3, x: 0, y: 2)
                         .overlay(
                             Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                                 .foregroundColor(.black)
                                 .font(.system(size: 20))
                         )
                 }
+                .hitCraftStyle()
             }
             
             // Track Info
             VStack(alignment: .leading, spacing: 4) {
                 Text(track.title)
-                    .font(HitCraftFonts.poppins(16, weight: .medium))
+                    .font(HitCraftFonts.subheader())
+                    .foregroundColor(HitCraftColors.text)
                 
                 HStack(spacing: 4) {
                     Text(track.artist)
-                        .font(HitCraftFonts.poppins(14, weight: .regular))
-                        .foregroundColor(.gray)
+                        .font(HitCraftFonts.caption())
+                        .foregroundColor(HitCraftColors.secondaryText)
                     
                     if track.verified {
                         Image(systemName: "checkmark.seal.fill")
-                            .foregroundColor(.pink)
+                            .foregroundColor(HitCraftColors.accent)
                             .font(.system(size: 10))
                     }
                 }
+                
+                // Select Button with Gradient
+                Button(action: {}) {
+                    Text("SELECT")
+                        .font(HitCraftFonts.caption())
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(HitCraftColors.primaryGradient)
+                        .clipShape(RoundedRectangle(cornerRadius: HitCraftLayout.buttonCornerRadius))
+                }
+                .padding(.top, 4)
+                .hitCraftStyle()
             }
         }
         .padding(8)
-        .background(Color.white)
+        .background(HitCraftColors.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .shadow(color: Color.black.opacity(themeManager.currentTheme == .dark ? 0.3 : 0.05), radius: 3, x: 0, y: 2)
     }
 }
 

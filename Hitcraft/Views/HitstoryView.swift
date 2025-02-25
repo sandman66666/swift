@@ -3,9 +3,7 @@ import SwiftUI
 struct HistoryView: View {
     @State private var searchText = ""
     @State private var expandedCardId: UUID? = nil
-    
-    // Darker background color for header and bottom areas
-    private let darkAreaColor = Color(hex: "E0E0E0")
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     // Sample chat items - these would come from your API in a real app
     private let chatItems = [
@@ -14,7 +12,7 @@ struct HistoryView: View {
             threadId: "sample-thread-1"
         ),
         ChatItem(
-            title: "I need some help with good presets for my kick drum sound",
+            title: "I need some help with good presets for kick drum sound",
             details: ChatDetails(
                 pluginName: "12/07/92",
                 year: "2003",
@@ -29,28 +27,30 @@ struct HistoryView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Top Header - darker background
+            // Top Header
             HStack {
                 Spacer()
                 Text("HISTORY")
-                    .font(HitCraftFonts.poppins(18, weight: .light))
-                    .foregroundColor(.black)
+                    .font(HitCraftFonts.header())
+                    .foregroundColor(HitCraftColors.text)
                 Spacer()
             }
             .frame(height: 44)
             .padding(.horizontal, 20)
-            .background(darkAreaColor)
+            .background(HitCraftColors.headerFooterBackground)
+            .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
             
             // Search Bar
             HStack {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(.gray)
+                    .foregroundColor(HitCraftColors.secondaryText)
                 TextField("Search chats...", text: $searchText)
-                    .font(HitCraftFonts.poppins(15, weight: .light))
+                    .font(HitCraftFonts.body())
+                    .foregroundColor(HitCraftColors.text)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(Color.white)
+            .background(HitCraftColors.cardBackground)
             .clipShape(RoundedRectangle(cornerRadius: 25))
             .overlay(
                 RoundedRectangle(cornerRadius: 25)
@@ -58,11 +58,12 @@ struct HistoryView: View {
             )
             .padding(.horizontal, 20)
             .padding(.top, 20)
+            .padding(.bottom, 10)
             
             ScrollView {
                 VStack(spacing: 15) {
                     ForEach(chatItems) { item in
-                        ChatHistoryCard(
+                        ChatHistoryCardView(
                             item: item,
                             isExpanded: expandedCardId == item.id,
                             onTap: {
@@ -81,11 +82,13 @@ struct HistoryView: View {
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 20)
+                .padding(.top, 10)
+                .padding(.bottom, 20)
             }
             .background(HitCraftColors.background)
         }
         .background(HitCraftColors.background)
+        .animation(.easeInOut(duration: 0.3), value: themeManager.currentTheme)
     }
     
     private func loadChat(item: ChatItem) {
@@ -112,73 +115,6 @@ struct HistoryView: View {
     }
 }
 
-// Components
-struct ChatHistoryCard: View {
-    let item: ChatItem
-    let isExpanded: Bool
-    let onTap: () -> Void
-    let onLoadChat: () -> Void
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Title row with chat bubble
-            Button(action: onTap) {
-                HStack(alignment: .top, spacing: 12) {
-                    Image(systemName: "bubble.left.fill")
-                        .resizable()
-                        .frame(width: 20, height: 20)
-                        .foregroundColor(HitCraftColors.accent.opacity(0.6))
-                    
-                    Text(item.title)
-                        .font(HitCraftFonts.poppins(14, weight: .light))
-                        .foregroundColor(HitCraftColors.text)
-                        .lineSpacing(6)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-            .buttonStyle(PlainButtonStyle())
-            
-            // Expanded details
-            if isExpanded, let details = item.details {
-                VStack(alignment: .leading, spacing: 8) {
-                    DetailRow(title: "Plugin name", value: details.pluginName)
-                    DetailRow(title: "Year", value: details.year)
-                    DetailRow(title: "link to preset", value: details.presetLink, isLink: true)
-                    
-                    Button(action: onLoadChat) {
-                        HStack {
-                            Text("Take me to this Chat")
-                                .font(HitCraftFonts.poppins(14, weight: .medium))
-                                .foregroundColor(HitCraftColors.accent)
-                            Image(systemName: "arrow.right")
-                                .foregroundColor(HitCraftColors.accent)
-                        }
-                    }
-                    .padding(.top, 4)
-                }
-                .padding(.leading, 32)
-            } else if !isExpanded {
-                // Always show a "Go to Chat" button even when not expanded
-                Button(action: onLoadChat) {
-                    Text("Open chat")
-                        .font(HitCraftFonts.poppins(12, weight: .medium))
-                        .foregroundColor(HitCraftColors.accent)
-                        .padding(.vertical, 6)
-                        .padding(.horizontal, 12)
-                        .background(HitCraftColors.accent.opacity(0.1))
-                        .clipShape(Capsule())
-                }
-                .padding(.leading, 32)
-            }
-        }
-        .padding(.vertical, 19)
-        .padding(.horizontal, 20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(HitCraftColors.border, lineWidth: 1)
-        )
-    }
+#Preview {
+    HistoryView()
 }
