@@ -60,7 +60,8 @@ final class ChatService {
     
     func sendMessage(text: String, artistId: String) async throws -> ChatMessage {
         // If we already have a threadId but it's one of our mock ones, generate a mock response
-        if let threadId = self.activeThreadId, threadId.hasPrefix("mock-thread-") {
+        if let threadId = self.activeThreadId,
+           (threadId.hasPrefix("mock-thread-") || threadId.hasPrefix("sample-thread-")) {
             // Return a mock response for testing
             return ChatMessage(
                 content: generateMockResponse(to: text),
@@ -72,7 +73,22 @@ final class ChatService {
         // Get or create thread ID
         let threadId: String
         if let existingThreadId = self.activeThreadId {
-            threadId = existingThreadId
+            // Only use the existing ID if it's not a sample/mock ID
+            if !existingThreadId.hasPrefix("sample-thread-") {
+                threadId = existingThreadId
+            } else {
+                // If it's a sample thread ID, create a new real thread
+                do {
+                    threadId = try await createChat(artistId: artistId)
+                } catch {
+                    // Return a mock response if we can't create a thread
+                    return ChatMessage(
+                        content: "I'm having trouble connecting. Please check your internet connection and try again.",
+                        sender: "assistant",
+                        timestamp: Date()
+                    )
+                }
+            }
         } else {
             do {
                 threadId = try await createChat(artistId: artistId)
@@ -155,6 +171,20 @@ final class ChatService {
     
     // Helper to generate mock responses for development and testing
     private func generateMockResponse(to message: String) -> String {
+        // Add YouTube embed example if asked about a song
+        if message.lowercased().contains("song") &&
+           (message.lowercased().contains("greatest") || message.lowercased().contains("best") ||
+            message.lowercased().contains("youtube") || message.lowercased().contains("video")) {
+            
+            return """
+            Based on many critics and polls, one of the greatest songs of all time is "Bohemian Rhapsody" by Queen. This epic 1975 masterpiece combined rock, opera, and ballad elements in a revolutionary way.
+            
+            <iframe width="560" height="315" src="https://www.youtube.com/embed/fJ9rUzIMcZQ" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            
+            What aspects of this song inspire you for your own music?
+            """
+        }
+        
         // Simple responses for common music questions
         if message.lowercased().contains("chord") || message.lowercased().contains("progression") {
             return "For a pop song, try a classic I-V-vi-IV progression. In the key of C major, that would be C-G-Am-F. This progression is used in countless hit songs!"

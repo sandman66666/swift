@@ -54,7 +54,7 @@ struct ScreenHeader: View {
 }
 
 // Settings card component
-struct SettingsCard<Content: View>: View {
+struct HitCraftSettingsCard<Content: View>: View {
     let content: Content
     
     init(@ViewBuilder content: () -> Content) {
@@ -72,7 +72,7 @@ struct SettingsCard<Content: View>: View {
 }
 
 // Settings row component
-struct SettingsRow: View {
+struct HitCraftSettingsRow: View {
     let icon: String
     let title: String
     let subtitle: String

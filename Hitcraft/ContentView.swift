@@ -8,6 +8,9 @@ struct ChatContentView: View {
     @State private var error: Error?
     @State private var showError = false
     @State private var isLoadingMessages = true
+    @State private var scrollViewProxy: ScrollViewProxy? = nil
+    @State private var keyboardHeight: CGFloat = 0
+    @State private var bottomPadding: CGFloat = 80 // Increased padding space above the message bar
     
     // Background color for header and bottom areas
     private let headerFooterColor = HitCraftColors.headerFooterBackground
@@ -65,6 +68,10 @@ struct ChatContentView: View {
                             ForEach(messages) { message in
                                 MessageBubble(isFromUser: message.isFromUser, text: message.text)
                                     .id(message.id)
+                                    .transition(.asymmetric(
+                                        insertion: .scale(scale: 0.98).combined(with: .opacity),
+                                        removal: .opacity
+                                    ))
                             }
                         }
                         
@@ -77,16 +84,40 @@ struct ChatContentView: View {
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.leading, 24)
+                            .id("typingIndicator")
+                            .transition(.opacity)
                         }
+                        
+                        // Invisible spacer at the bottom with increased height
+                        Color.clear
+                            .frame(height: bottomPadding)
+                            .id("bottomSpacer")
                     }
                     .padding(.vertical, 16)
                 }
                 .onChange(of: messages) { _ in
-                    if let lastMessage = messages.last {
-                        withAnimation {
-                            proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                    scrollToBottom(proxy: proxy, animated: true)
+                }
+                .onChange(of: isTyping) { newValue in
+                    if newValue {
+                        // If typing indicator appears, scroll to it
+                        scrollToTypingIndicator(proxy: proxy)
+                    }
+                }
+                .onAppear {
+                    self.scrollViewProxy = proxy
+                }
+                .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
+                    if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
+                        self.keyboardHeight = keyboardFrame.height
+                        // When keyboard appears, ensure we scroll to the bottom
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            scrollToBottom(proxy: proxy, animated: true)
                         }
                     }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+                    self.keyboardHeight = 0
                 }
             }
             .background(HitCraftColors.background)
@@ -111,6 +142,36 @@ struct ChatContentView: View {
         }
     }
     
+    // Function to scroll to bottom of chat with simplified animation to avoid NaN errors
+    private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool = true) {
+        if animated {
+            withAnimation(.easeOut(duration: 0.3)) {
+                if let lastMessage = messages.last {
+                    proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                } else if isTyping {
+                    proxy.scrollTo("typingIndicator", anchor: .bottom)
+                } else {
+                    proxy.scrollTo("bottomSpacer", anchor: .bottom)
+                }
+            }
+        } else {
+            if let lastMessage = messages.last {
+                proxy.scrollTo(lastMessage.id, anchor: .bottom)
+            } else if isTyping {
+                proxy.scrollTo("typingIndicator", anchor: .bottom)
+            } else {
+                proxy.scrollTo("bottomSpacer", anchor: .bottom)
+            }
+        }
+    }
+    
+    // Function to scroll to typing indicator with simplified animation
+    private func scrollToTypingIndicator(proxy: ScrollViewProxy) {
+        withAnimation(.easeOut(duration: 0.3)) {
+            proxy.scrollTo("typingIndicator", anchor: .bottom)
+        }
+    }
+    
     func loadChat() async {
         isLoadingMessages = true
         
@@ -118,30 +179,36 @@ struct ChatContentView: View {
         if let threadId = ChatService.shared.activeThreadId {
             print("Loading existing thread: \(threadId)")
             
-            // For a real app, you'd load messages from this thread
-            // Since we don't have a get thread messages endpoint, we'll generate mock messages
+            // Create messages array first, then assign it to messages state variable
+            let historyMessages: [ChatMessage] = [
+                ChatMessage(
+                    content: "Welcome back to our conversation! How can I help you today?",
+                    sender: "assistant",
+                    timestamp: Date().addingTimeInterval(-3600) // 1 hour ago
+                ),
+                ChatMessage(
+                    content: "I was working on a song earlier",
+                    sender: "user",
+                    timestamp: Date().addingTimeInterval(-3500) // 58 minutes ago
+                ),
+                ChatMessage(
+                    content: "Great! I remember we were discussing your song. Would you like to continue where we left off?",
+                    sender: "assistant",
+                    timestamp: Date().addingTimeInterval(-3450) // 57 minutes ago
+                )
+            ]
             
-            // Add a welcome message and a fake previous message exchange
-            let welcomeMessage = ChatMessage(
-                content: "Welcome back to our conversation! How can I help you today?",
-                sender: "assistant",
-                timestamp: Date().addingTimeInterval(-3600) // 1 hour ago
-            )
-            
-            let userMessage = ChatMessage(
-                content: "I was working on a song earlier",
-                sender: "user",
-                timestamp: Date().addingTimeInterval(-3500) // 58 minutes ago
-            )
-            
-            let assistantResponse = ChatMessage(
-                content: "Great! I remember we were discussing your song. Would you like to continue where we left off?",
-                sender: "assistant",
-                timestamp: Date().addingTimeInterval(-3450) // 57 minutes ago
-            )
-            
-            messages = [welcomeMessage, userMessage, assistantResponse]
             isLoadingMessages = false
+            
+            // Use a simple animation approach to avoid NaN errors
+            withAnimation(.easeIn(duration: 0.3)) {
+                messages = historyMessages
+            }
+            
+            // Scroll to bottom after loading messages
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                self.scrollToBottom(proxy: self.scrollViewProxy!, animated: true)
+            }
         } else {
             // Start a new chat
             await loadInitialChat()
@@ -163,12 +230,22 @@ struct ChatContentView: View {
                 sender: "assistant"
             )
             
-            messages = [welcomeMessage, message]
+            isLoadingMessages = false
+            
+            // Use a simpler animation to avoid NaN errors
+            withAnimation(.easeIn(duration: 0.3)) {
+                messages = [welcomeMessage, message]
+            }
+            
+            // Scroll to bottom after loading messages
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                self.scrollToBottom(proxy: self.scrollViewProxy!, animated: true)
+            }
         } catch {
             self.error = error
             showError = true
+            isLoadingMessages = false
         }
-        isLoadingMessages = false
     }
     
     private func sendMessage() {
@@ -177,34 +254,63 @@ struct ChatContentView: View {
         let userText = messageText
         messageText = ""
         
-        // Create and append user message immediately
+        // Create user message
         let userMessage = ChatMessage(
             content: userText,
             sender: "user"
         )
         
-        withAnimation {
+        // Add user message with simple animation
+        withAnimation(.easeIn(duration: 0.3)) {
             messages.append(userMessage)
         }
         
         // Show typing indicator
-        isTyping = true
+        withAnimation(.easeIn(duration: 0.3)) {
+            isTyping = true
+        }
+        
+        // Ensure we scroll to the typing indicator
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            if self.scrollViewProxy != nil {
+                self.scrollToTypingIndicator(proxy: self.scrollViewProxy!)
+            }
+        }
         
         // Send message to API
         Task {
             do {
+                // Add a small artificial delay to make it feel more natural
+                try await Task.sleep(nanoseconds: 600_000_000) // 0.6 seconds
+                
                 let responseMessage = try await ChatService.shared.sendMessage(
                     text: userText,
                     artistId: defaultArtist.id
                 )
                 
-                isTyping = false
+                // Hide typing indicator with animation
+                withAnimation(.easeOut(duration: 0.2)) {
+                    isTyping = false
+                }
                 
+                // Short pause before showing the response
+                try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+                
+                // Add the response message with animation
                 withAnimation(.easeIn(duration: 0.3)) {
                     messages.append(responseMessage)
                 }
+                
+                // Scroll to the new message
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    if self.scrollViewProxy != nil {
+                        self.scrollToBottom(proxy: self.scrollViewProxy!, animated: true)
+                    }
+                }
             } catch {
-                isTyping = false
+                withAnimation {
+                    isTyping = false
+                }
                 self.error = error
                 showError = true
             }
